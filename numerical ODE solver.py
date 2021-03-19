@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import deepcopy
 import timeit
 
 l   = 1.            # (m) Length of pendulum
@@ -10,45 +9,24 @@ rho = 1.225         # (kg/m^3) Density of air
 r   = 0.05          # (m) Radius of sphere
 A   = np.pi * r**2  # (m^2) Cross-secional area
 c_d = 0.47          # (.) Drag coefficient of a sphere
-
 # alpha = c_d * rho * A / 2.   # Initially assume air-resitance is zero
 alpha = 0
 
-T_final = 25     # (s) Final time
-N = 10           # (.) Number of time-steps
-dt = T_final / (N)
-
+T_final = 20     # (s) Final time
 initial_conditions = [0,1]      #[yp,y]
-
-yp_rk4 = initial_conditions[0]
-y_rk4 = initial_conditions[1]
-y_history_rk4 = np.zeros(N+1)
-y_history_rk4[0] = y_rk4
-
-yp_fe_1 = initial_conditions[0]
-y_fe_1 = initial_conditions[1]
-y_history_fe_1 = np.zeros(N+1)
-y_history_fe_1[0] = y_fe_1
-
-yp_fe_2 = initial_conditions[0]
-y_fe_2 = initial_conditions[1]
-y_history_fe_2 = np.zeros(N+1)
-y_history_fe_2[0] = y_fe_2
-
-x = np.linspace(0, T_final, N+1)
 
 error_list = [[[],[]],[[],[]],[[],[]],[]]
 
 
 def dypdt(y, yp):
     # return (-m*g*np.sin(y)/l-alpha*l*yp*abs(l*yp))/m
-    return -yp-y
-    # return -y
+    # return -yp-y
+    return -y
 
 
 def y_exact(x):
-    return 2/3*np.sqrt(3)*np.exp(-x/2)*np.sin(np.sqrt(3)/2*x+np.pi/3)
-    # return np.cos(x)
+    # return 2/3*np.sqrt(3)*np.exp(-x/2)*np.sin(np.sqrt(3)/2*x+np.pi/3)
+    return np.cos(x)
 
 
 def rk4(dypdt, dh):
@@ -83,11 +61,12 @@ def fe_inc(dypdt, yp1, dh):
     return dy, yp2
 
 
-for j in range(5):
+for j in range(4):
     toc = timeit.default_timer()
 
-    N = 10**(j+1)
-    print(N, "<--number of steps")
+    base = 4
+    N = base**(j+1)
+    print(f"{N} ({base}^{j+1})<--number of steps")
     dt = T_final / (N)
 
     yp_rk4 = initial_conditions[0]
@@ -170,52 +149,62 @@ for j in range(5):
 
     error_list[0][0].append(np.log(abs(rk4_error[index]))/np.log(10))
     error_list[0][1].append(np.log(abs(rk4_error_sum))/np.log(10))
+    # error_list[0][1].append(abs(rk4_error_sum))
     error_list[1][0].append(np.log(abs(fe1_error[index]))/np.log(10))
     error_list[1][1].append(np.log(abs(fe1_error_sum))/np.log(10))
+    # error_list[1][1].append(abs(fe1_error_sum))
     error_list[2][0].append(np.log(abs(fe2_error[index]))/np.log(10))
     error_list[2][1].append(np.log(abs(fe2_error_sum))/np.log(10))
-    error_list[3].append(abs(np.log(dt)/np.log(10)))
+    # error_list[2][1].append(abs(fe2_error_sum))
+    error_list[3].append(-np.log(dt)/np.log(10))
+
+    # y_history_fe_2.delete()
+    # y_history_fe_1.delete()
+    # y_history_rk4.delete()
 
     tic = timeit.default_timer()
-    print(f"{tic-toc} <-- time taken for 10^{j+1} steps (step size = {dt})\n\n")
+    print(f"{tic-toc} <-- time taken for {base}^{j+1} steps (step size = {dt})\n\n")
 
-fig, subfig = plt.subplots(2,2)
-fig.suptitle('stacked subplots')
-subfig[0][0].plot(x, y_history_rk4, label='4th order runge kutta')
-subfig[0][0].plot(x, y_history_fe_1, label='forward euler *correct*')
-subfig[0][0].plot(x, y_history_fe_2, label='forward euler *incorrect*')
-subfig[0][0].plot(x, y_solution, label='exact solution')
-subfig[0][0].legend(loc="upper right")
-subfig[0][0].set_ylabel('y', loc='center')
-subfig[0][0].set_xlabel('t', loc='left')
-subfig[0][0].set_title(f'Interval bound: {T_final}')
-subfig[0][0].grid()
+# fig, subfig = plt.subplots(2,2)
+# fig.suptitle('stacked subplots')
+# subfig[0][0].plot(x, y_history_rk4, label='4th order runge kutta')
+# subfig[0][0].plot(x, y_history_fe_1, label='forward euler *correct*')
+# subfig[0][0].plot(x, y_history_fe_2, label='forward euler *incorrect*')
+# subfig[0][0].plot(x, y_solution, label='exact solution')
+# subfig[0][0].legend(loc="upper right")
+# subfig[0][0].set_ylabel('y', loc='center')
+# subfig[0][0].set_xlabel('t', loc='left')
+# subfig[0][0].set_title(f'Interval bound: {T_final}')
+# subfig[0][0].grid()
+#
+# subfig[0][1].plot(error_list[3], error_list[0][0], label='4th order runge kutta', marker='x')
+# subfig[0][1].plot(error_list[3], error_list[1][0], label='forward euler *correct*', marker='x')
+# subfig[0][1].plot(error_list[3], error_list[2][0], label='forward euler *incorrect*', marker='x')
+# subfig[0][1].legend(loc="upper right")
+# subfig[0][1].set_ylabel('log10(error)', loc='center')
+# subfig[0][1].set_xlabel('-log10(dt)', loc='left')
+# subfig[0][1].set_title('error at interval end')
+# subfig[0][1].grid()
+#
+# subfig[1][0].plot(error_list[3], error_list[0][1], label='4th order runge kutta', marker='x')
+# subfig[1][0].plot(error_list[3], error_list[1][1], label='forward euler *correct*', marker='x')
+# subfig[1][0].plot(error_list[3], error_list[2][1], label='forward euler *incorrect*', marker='x')
+# subfig[1][0].legend(loc="upper right")
+# subfig[1][0].set_ylabel('log10(Sigma error)', loc='center')
+# subfig[1][0].set_xlabel('-log10(dt)', loc='left')
+# subfig[1][0].set_title('integral of error')
+# subfig[1][0].grid()
 
-subfig[0][1].plot(error_list[3], error_list[0][0], label='4th order runge kutta', marker='x')
-subfig[0][1].plot(error_list[3], error_list[1][0], label='forward euler *correct*', marker='x')
-subfig[0][1].plot(error_list[3], error_list[2][0], label='forward euler *incorrect*', marker='x')
-subfig[0][1].legend(loc="upper right")
-subfig[0][1].set_ylabel('log10(error)', loc='center')
-subfig[0][1].set_xlabel('-log10(dt)', loc='left')
-subfig[0][1].set_title('error at interval end')
-subfig[0][1].grid()
+# plt.plot(error_list[3], error_list[0][1], label='4th order runge kutta', marker='x')
+# plt.plot(error_list[3], error_list[1][1], label='forward euler *correct*', marker='x')
+# plt.plot(error_list[3], error_list[2][1], label='forward euler *incorrect*', marker='x')
+# plt.legend(loc="upper right")
+# plt.grid()
 
-subfig[1][0].plot(error_list[3], error_list[0][1], label='4th order runge kutta', marker='x')
-subfig[1][0].plot(error_list[3], error_list[1][1], label='forward euler *correct*', marker='x')
-subfig[1][0].plot(error_list[3], error_list[2][1], label='forward euler *incorrect*', marker='x')
-subfig[1][0].legend(loc="upper right")
-subfig[1][0].set_ylabel('log10(Sigma error)', loc='center')
-subfig[1][0].set_xlabel('-log10(dt)', loc='left')
-subfig[1][0].set_title('integral of error')
-subfig[1][0].grid()
-# plt.plot(x, y_solution, label='exact solution')
-
-# plt.plot(x, rk4_error, label='4th order runge kutta error')
-# plt.plot(x, fe1_error, label='forward euler error *correct*')
-# plt.plot(x, fe2_error, label='forward euler error *incorrect*')
-
-# print(error_list[3], '<-- -log10(dt)')
-
+plt.plot(x, y_history_rk4, label='4th order runge kutta')
+plt.plot(x, y_history_fe_1, label='forward euler *correct*')
+plt.plot(x, y_history_fe_2, label='forward euler *incorrect*')
+plt.legend(loc="upper right")
+plt.grid()
+print(error_list[3])
 plt.show()
-
-
